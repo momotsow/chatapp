@@ -1,0 +1,117 @@
+ <!-- ********How To Run The Chat App ******
+ connect to mongodb database by  C:\Program Files\MongoDB\Server\4.0\bin and run mongod
+ run the app by "node index.js" 
+****************************************************************************************-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <script
+  src="http://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+  crossorigin="anonymous"></script>   
+    <script type="text/javascript" src="socket.io/socket.io.js"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="style/index.css" />
+
+    <title> Chat APP</title>
+</head>
+<body>
+    <!-- chat app skeleton -->
+   <div id="login-area">
+    
+       <div id="login-text"><h1>Login Page</h1></div>
+        <!-- login form area -->
+       <div id="login-form-area">
+           <form id="login-form">
+               <input id="username" type="text" placeholder="Username" autocomplete="off">
+               <input id="submit" type="submit" value="Login">
+           </form>
+       </div>
+   </div>
+
+   <div id="chat-area">
+       <div id="users-area">
+            <!-- online users area -->
+           <div id="online-users">
+               <h1>Online Users</h1>
+               <ul id="users"> </ul>
+           </div>
+       </div>
+
+       <!-- dispalay message sent -->
+       <div id="message-area">
+           <div id="dispay-message-area">
+               <ul id="messages"></ul>
+           </div>
+
+           <div id="message-form-area">
+               <form id="message-form">
+                   <input id="message" type="text" placeholder="type your message...." autocomplete="off">
+                    <button id="message-submit">Send</button>
+               </form>
+           </div>
+       </div>
+   </div>
+</body>
+
+<script type="text/javascript">
+    var socket = io();
+
+    // update online users
+function updateUsers(list){
+    for(var i = 0; i < list.length; i++) {
+            $("#users").append("<li><b>" + list[i] + "</b></li>");
+        }
+}
+    
+// login form validation
+    $("#login-form").submit(function(event) {
+            event.preventDefault();
+        // check username if blank say invalid and if connected show the name on the chat area 
+        if($("#username").val() == "" || $("#username").val() == " ") {
+            alert("Invalid username");
+
+        } else {  
+            $username = $("#username").val();
+            $("#login-area").hide();
+            $("#chat-area").show();
+
+            $("#messages").html("");
+
+            socket.emit("has connected", $username);
+        }
+    });
+
+    // message validation, so it does not sent a blank message
+    $("#message-form").submit(function(event){
+        event.preventDefault();
+
+        if($("#message").val() == "" || $("#message").val() == " ") {
+            alert("you can't send an empty message");
+        } else {
+            socket.emit("new message", {username: $username, message: $("#message").val()});
+   
+            $("#message").val();
+        }
+    });
+    // handle event from soccket
+    socket.on("has connected", function(data){
+        $("#users").html(""); //remove everything whenever a user connects
+        // $("#messages").html("");
+        updateUsers(data.usersList);
+        $("#messages").append("<li><i><b>" + data.username + "</b> has connected <i><li>");
+    });
+
+    socket.on("has disconnected", function(data){
+        $("#users").html("");//remove everything whenever a user disconnects
+        updateUsers(data.usersList);
+        $("#messages").append("<li><i><b>" + data.username + "</b> has disconnected <i><li>");
+
+    });
+
+    socket.on("new message", function(data) {
+        $("#messages").append("<li><b>" + data.username + "</br>:" + data.message  + "</li>" );
+    });
+
+</script>
+</html>  
